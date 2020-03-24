@@ -23,7 +23,7 @@ extern "C" {
 #include "freertos.h"
 
 #define SDRAM_BANK_ADDR                 ((uint32_t)0xC0000000)
-#define WRITE_READ_ADDR     						((uint32_t)0x0800)
+#define WRITE_READ_ADDR     						((uint32_t)0x7FF00)
 
 
 

@@ -103,6 +103,11 @@ osThreadId myTask02Handle;
 	uint64_t dataStr [BUFFER_SIZE][2] = {0};
 	uint64_t temp =0x0 ;
 	
+	//SDRAM variables
+	
+	uint16_t memblockTracer = 0x00;
+	
+	
 	
 
 	
