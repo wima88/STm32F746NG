@@ -183,38 +183,38 @@ void vTaskLCDT(void *arg)
 	
   /* LCD Initialization */
   BSP_LCD_Init();
-  BSP_LCD_LayerDefaultInit(0, LCD_FB_START_ADDRESS);
-  /* Enable the LCD */
-  BSP_LCD_DisplayOn();
-  /* Select the LCD Background Layer  */
-  BSP_LCD_SelectLayer(0);
-  /* Clear the Background Layer */
-  BSP_LCD_Clear(LCD_COLOR_BLACK);
-  /* Some sign */
-  BSP_LCD_SetTextColor(LCD_COLOR_RED);
-  BSP_LCD_SetFont(&Font12);
+//  BSP_LCD_LayerDefaultInit(0, LCD_FB_START_ADDRESS);
+//  /* Enable the LCD */
+//  BSP_LCD_DisplayOn();
+//  /* Select the LCD Background Layer  */
+//  BSP_LCD_SelectLayer(0);
+//  /* Clear the Background Layer */
+//  BSP_LCD_Clear(LCD_COLOR_BLACK);
+//  /* Some sign */
+//  BSP_LCD_SetTextColor(LCD_COLOR_RED);
+//  BSP_LCD_SetFont(&Font12);
   //BSP_LCD_DisplayStringAt(0, 0, (uint8_t*) "Test Run round_1!", CENTER_MODE);
 	
 
 	
 	for(;;)
 	{
-		if( xQueueReceive( xQueue2, &( packetToDisplay ), 0 ) )
-		{
-				sprintf(lcdText,"%x",packetToDisplay.Header.StdId);
-				BSP_LCD_ClearStringLine(lcdYpos / 12);
-				BSP_LCD_DisplayStringAt(lcdXpos,lcdYpos,(uint8_t*)lcdText,LEFT_MODE);
-									for(int i=0;i<packetToDisplay.Header.DLC;i++)
-									{
-										sprintf(lcdText,"%x",packetToDisplay.Data[i]);
-										BSP_LCD_DisplayStringAt(lcdXpos+80+(24*i)-8,lcdYpos,(uint8_t*)lcdText,LEFT_MODE);
-									}
-											lcdYpos=lcdYpos+12;
-											lcdXpos = 0;
-											if(lcdYpos>12*21){lcdYpos =0;} //reset xpos
-											
+//		if( xQueueReceive( xQueue2, &( packetToDisplay ), 0 ) )
+//		{
+//				sprintf(lcdText,"%x",packetToDisplay.Header.StdId);
+//				BSP_LCD_ClearStringLine(lcdYpos / 12);
+//				BSP_LCD_DisplayStringAt(lcdXpos,lcdYpos,(uint8_t*)lcdText,LEFT_MODE);
+//									for(int i=0;i<packetToDisplay.Header.DLC;i++)
+//									{
+//										sprintf(lcdText,"%x",packetToDisplay.Data[i]);
+//										BSP_LCD_DisplayStringAt(lcdXpos+80+(24*i)-8,lcdYpos,(uint8_t*)lcdText,LEFT_MODE);
+//									}
+//											lcdYpos=lcdYpos+12;
+//											lcdXpos = 0;
+//											if(lcdYpos>12*21){lcdYpos =0;} //reset xpos
+//											
 
-			}
+//			}
 	}
 }
 
