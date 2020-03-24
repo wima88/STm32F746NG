@@ -236,23 +236,7 @@ void vTaskLIST(void *arg)
 	{
 		if( xQueueReceive( xQueue2, &( packetToDisplay ), 0 ) )
 		{
-			for(uint8_t i=0;i<BUFFER_SIZE;i++)
-			{
-				if(dataStr[i][0] == packetToDisplay.Header.StdId)  // found the proper SID,store and end the iteration
-				{
-					dataStr[i][1] = *(uint64_t*)&packetToDisplay.Data[0];
-	
-					break;			
-				}
-				else if(dataStr[i][0] == 0)		// SID is new to the List enter it and end iteration
-				{
-					dataStr[i][0]=packetToDisplay.Header.StdId;
-					dataStr[i][1] = *(uint64_t*)&packetToDisplay.Data[0];  
 
-					break;
-				}
-				else{}
-			}
 		}
 
 	}
@@ -271,7 +255,6 @@ void vTaskSDRAM(void *arg)
 	
 	 extern 	uint16_t memblockTracer;
 
-
 	for(;;)
 	{
 		if( xQueueReceive( xQueue3, &( packetToDisplay ), 0 ) )
@@ -285,7 +268,6 @@ void vTaskSDRAM(void *arg)
 				memblockTracer++;
 			}
 			
-
 			for(uint16_t n = 0; n<memblockTracer ;n++)
 			{
 				// iterate to find other nodes
