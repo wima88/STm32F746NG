@@ -183,38 +183,38 @@ void vTaskLCDT(void *arg)
 	
   /* LCD Initialization */
   BSP_LCD_Init();
-//  BSP_LCD_LayerDefaultInit(0, LCD_FB_START_ADDRESS);
-//  /* Enable the LCD */
-//  BSP_LCD_DisplayOn();
-//  /* Select the LCD Background Layer  */
-//  BSP_LCD_SelectLayer(0);
-//  /* Clear the Background Layer */
-//  BSP_LCD_Clear(LCD_COLOR_BLACK);
-//  /* Some sign */
-//  BSP_LCD_SetTextColor(LCD_COLOR_RED);
-//  BSP_LCD_SetFont(&Font12);
+  BSP_LCD_LayerDefaultInit(0, LCD_FB_START_ADDRESS);
+  /* Enable the LCD */
+  BSP_LCD_DisplayOn();
+  /* Select the LCD Background Layer  */
+  BSP_LCD_SelectLayer(0);
+  /* Clear the Background Layer */
+  BSP_LCD_Clear(LCD_COLOR_BLACK);
+  /* Some sign */
+  BSP_LCD_SetTextColor(LCD_COLOR_RED);
+  BSP_LCD_SetFont(&Font12);
   //BSP_LCD_DisplayStringAt(0, 0, (uint8_t*) "Test Run round_1!", CENTER_MODE);
 	
 
 	
 	for(;;)
 	{
-//		if( xQueueReceive( xQueue2, &( packetToDisplay ), 0 ) )
-//		{
-//				sprintf(lcdText,"%x",packetToDisplay.Header.StdId);
-//				BSP_LCD_ClearStringLine(lcdYpos / 12);
-//				BSP_LCD_DisplayStringAt(lcdXpos,lcdYpos,(uint8_t*)lcdText,LEFT_MODE);
-//									for(int i=0;i<packetToDisplay.Header.DLC;i++)
-//									{
-//										sprintf(lcdText,"%x",packetToDisplay.Data[i]);
-//										BSP_LCD_DisplayStringAt(lcdXpos+80+(24*i)-8,lcdYpos,(uint8_t*)lcdText,LEFT_MODE);
-//									}
-//											lcdYpos=lcdYpos+12;
-//											lcdXpos = 0;
-//											if(lcdYpos>12*21){lcdYpos =0;} //reset xpos
-//											
+		if( xQueueReceive( xQueue2, &( packetToDisplay ), 0 ) )
+		{
+				sprintf(lcdText,"%x",packetToDisplay.Header.StdId);
+				BSP_LCD_ClearStringLine(lcdYpos / 12);
+				BSP_LCD_DisplayStringAt(lcdXpos,lcdYpos,(uint8_t*)lcdText,LEFT_MODE);
+									for(int i=0;i<packetToDisplay.Header.DLC;i++)
+									{
+										sprintf(lcdText,"%x",packetToDisplay.Data[i]);
+										BSP_LCD_DisplayStringAt(lcdXpos+80+(24*i)-8,lcdYpos,(uint8_t*)lcdText,LEFT_MODE);
+									}
+											lcdYpos=lcdYpos+12;
+											lcdXpos = 0;
+											if(lcdYpos>12*21){lcdYpos =0;} //reset xpos
+											
 
-//			}
+			}
 	}
 }
 
@@ -236,23 +236,7 @@ void vTaskLIST(void *arg)
 	{
 		if( xQueueReceive( xQueue2, &( packetToDisplay ), 0 ) )
 		{
-			for(uint8_t i=0;i<BUFFER_SIZE;i++)
-			{
-				if(dataStr[i][0] == packetToDisplay.Header.StdId)  // found the proper SID,store and end the iteration
-				{
-					dataStr[i][1] = *(uint64_t*)&packetToDisplay.Data[0];
-	
-					break;			
-				}
-				else if(dataStr[i][0] == 0)		// SID is new to the List enter it and end iteration
-				{
-					dataStr[i][0]=packetToDisplay.Header.StdId;
-					dataStr[i][1] = *(uint64_t*)&packetToDisplay.Data[0];  
 
-					break;
-				}
-				else{}
-			}
 		}
 
 	}
@@ -268,13 +252,44 @@ void vTaskSDRAM(void *arg)
 {
 	 extern  CAN_packet 		packetToDisplay;
 	 extern  QueueHandle_t 	xQueue3;
+	
+	 extern 	uint16_t memblockTracer;
 
 	for(;;)
 	{
 		if( xQueueReceive( xQueue3, &( packetToDisplay ), 0 ) )
 		{
-				*(__IO uint32_t*) (SDRAM_BANK_ADDR + WRITE_READ_ADDR) = *(uint32_t*)&packetToDisplay.Data[0];
-				*(__IO uint32_t*) (SDRAM_BANK_ADDR + WRITE_READ_ADDR+4) = *(uint32_t*)&packetToDisplay.Data[4];
+			// insert the firsrt node 
+			if(memblockTracer == 0x00)
+			{
+				*(__IO uint32_t*) (SDRAM_BANK_ADDR + WRITE_READ_ADDR) = packetToDisplay.Header.StdId;
+				*(__IO uint32_t*) (SDRAM_BANK_ADDR + WRITE_READ_ADDR+4) = *(uint32_t*)&packetToDisplay.Data[0];
+				*(__IO uint32_t*) (SDRAM_BANK_ADDR +WRITE_READ_ADDR+8) = *(uint32_t*)&packetToDisplay.Data[4];
+				memblockTracer++;
+			}
+			
+			for(uint16_t n = 0; n<memblockTracer ;n++)
+			{
+				// iterate to find other nodes
+				if(packetToDisplay.Header.StdId == *(__IO uint32_t*) (SDRAM_BANK_ADDR + WRITE_READ_ADDR+12*n))
+				{
+					*(__IO uint32_t*) (SDRAM_BANK_ADDR + WRITE_READ_ADDR+4+(12*n)) = *(uint32_t*)&packetToDisplay.Data[0];
+					*(__IO uint32_t*) (SDRAM_BANK_ADDR +WRITE_READ_ADDR+8+(12*n)) = *(uint32_t*)&packetToDisplay.Data[4];
+					break;
+				}
+				
+			  // iteration did not found matching id insert at the end 
+				if(n+1 == memblockTracer)
+				{
+				*(__IO uint32_t*) (SDRAM_BANK_ADDR + WRITE_READ_ADDR+(12*n)) = packetToDisplay.Header.StdId;
+				*(__IO uint32_t*) (SDRAM_BANK_ADDR + WRITE_READ_ADDR+4+(12*n)) = *(uint32_t*)&packetToDisplay.Data[0];
+				*(__IO uint32_t*) (SDRAM_BANK_ADDR +WRITE_READ_ADDR+8+(12*n)) = *(uint32_t*)&packetToDisplay.Data[4];
+				memblockTracer++;
+				break;
+				}
+				
+			}
+			
 		}
 
 	}
