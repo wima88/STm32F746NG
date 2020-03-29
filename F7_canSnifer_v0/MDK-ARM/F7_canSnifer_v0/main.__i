@@ -1,0 +1,6 @@
+--c99 -c --cpu Cortex-M7.fp.sp -D__MICROLIB -g -O3 --apcs=interwork --split_sections -I ../Inc -I ../Drivers/STM32F7xx_HAL_Driver/Inc -I ../Drivers/STM32F7xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F7xx/Include -I ../Drivers/CMSIS/Include -I ..\Drivers\BSP\STM32746G-Discovery -I ..\Drivers\BSP\Components\ft5336 -I ..\Utilities\Fonts -I ../Middlewares/Third_Party/FatFs/src -I ../Middlewares/Third_Party/FreeRTOS/Source/include -I ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS -I ../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM7/r0p1 -I ../Middlewares/ST/STM32_USB_Host_Library/Core/Inc -I ../Middlewares/ST/STM32_USB_Host_Library/Class/MSC/Inc
+-I.\RTE\_F7_canSnifer_v0
+-IC:\Users\Wimansha\AppData\Local\Arm\Packs\ARM\CMSIS\5.5.1\CMSIS\Core\Include
+-IC:\Users\Wimansha\AppData\Local\Arm\Packs\Keil\STM32F7xx_DFP\2.11.0\Drivers\CMSIS\Device\ST\STM32F7xx\Include
+-D__UVISION_VERSION="527" -D_RTE_ -DSTM32F746xx -DUSE_HAL_DRIVER -DSTM32F746xx
+-o f7_cansnifer_v0\main.o --omf_browse f7_cansnifer_v0\main.crf --depend f7_cansnifer_v0\main.d "../Src/main.c"

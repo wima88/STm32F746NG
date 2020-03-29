@@ -79,9 +79,6 @@ osThreadId myTask02Handle;
 	
 	FATFS USBfatFs;
 	
-	UBaseType_t uxHighWaterMark;
-	UBaseType_t uxHighWaterMark_LCDT;
-	
 	/*CAN variables*/
 	CAN_FilterTypeDef sFilterConfig;
 	
@@ -91,6 +88,12 @@ osThreadId myTask02Handle;
 	
 	//freeRTOS variables
 	QueueHandle_t xQueue1,xQueue2,xQueue3;
+	
+	SemaphoreHandle_t xSemaphoreSdram;
+	
+	UBaseType_t uxHighWaterMark;
+	UBaseType_t uxHighWaterMark_LCDT;
+	
 	CAN_packet packet; // data structure toi hold CAN info
 	CAN_packet packetToWrite;
 	CAN_packet packetToDisplay;
@@ -189,6 +192,13 @@ int main(void)
 
   /* USER CODE BEGIN RTOS_MUTEX */
   /* add mutexes, ... */
+	xSemaphoreSdram = xSemaphoreCreateMutex();
+
+   if( xSemaphoreSdram == NULL )
+   {
+       while(1) // do not proceed
+			 {}
+   }
   /* USER CODE END RTOS_MUTEX */
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */
@@ -237,7 +247,7 @@ int main(void)
   /* add threads, ... */
 	  xTaskCreate(vTaskUSB,"Task_USB",256,NULL,osPriorityHigh,NULL);
 		xTaskCreate(vTaskLCDT,"Task_LCDT",256,NULL,osPriorityAboveNormal,NULL);
-	  //xTaskCreate(vTaskLIST,"Task_LIST",256,NULL,osPriorityAboveNormal,NULL);
+	  xTaskCreate(vTaskLIST,"Task_LIST",256,NULL,osPriorityNormal,NULL);
 		xTaskCreate(vTaskSDRAM,"Task_SDRAM",128,NULL,osPriorityAboveNormal,NULL);
 	  //xTaskCreate(vTaskCAN,"Task_CAN",128,NULL,osPriorityHigh,NULL);
 

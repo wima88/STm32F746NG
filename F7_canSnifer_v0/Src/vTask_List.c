@@ -229,15 +229,22 @@ void vTaskLIST(void *arg)
 	 extern  UBaseType_t 		uxHighWaterMark_LCDT;
 	 extern  CAN_packet 		packetToDisplay;
 	 extern  QueueHandle_t 	xQueue2;
-	 extern  uint64_t dataStr [BUFFER_SIZE][2];
-	 extern	 uint64_t temp;
+	 extern 	SemaphoreHandle_t xSemaphoreSdram;
+	
+	 extern 	uint16_t memblockTracer;
 
 	for(;;)
 	{
-		if( xQueueReceive( xQueue2, &( packetToDisplay ), 0 ) )
-		{
-
-		}
+		if( xSemaphoreTake( xSemaphoreSdram, 0 ) == pdTRUE )
+			{
+				for(uint32_t i=0;i<memblockTracer;i++)
+				{
+					*(__IO uint32_t*) (SDRAM_BANK_ADDR + WRITE_READ_ADDR+(12*i)) &= ~(0xFF);
+				}
+				xSemaphoreGive( xSemaphoreSdram);
+			}
+			vTaskDelay(5000);
+			
 
 	}
 }
@@ -246,12 +253,13 @@ void vTaskLIST(void *arg)
   *@brief  Function implimenting a READ/WRITE operation to SDRAM 
   *@param  argument: not in use
   *@retval None
-	*@depend stm32746g_discovery_sdram.h
+	*@depend stm32746g_discovery_sdram.h,Queue3,xSemaphoreSdram
 */
 void vTaskSDRAM(void *arg)
 {
 	 extern  CAN_packet 		packetToDisplay;
 	 extern  QueueHandle_t 	xQueue3;
+	 extern 	SemaphoreHandle_t xSemaphoreSdram;
 	
 	 extern 	uint16_t memblockTracer;
 
@@ -259,39 +267,42 @@ void vTaskSDRAM(void *arg)
 	{
 		if( xQueueReceive( xQueue3, &( packetToDisplay ), 0 ) )
 		{
-			// insert the firsrt node 
-			if(memblockTracer == 0x00)
-			{
-				*(__IO uint32_t*) (SDRAM_BANK_ADDR + WRITE_READ_ADDR) = packetToDisplay.Header.StdId;
-				*(__IO uint32_t*) (SDRAM_BANK_ADDR + WRITE_READ_ADDR+4) = *(uint32_t*)&packetToDisplay.Data[0];
-				*(__IO uint32_t*) (SDRAM_BANK_ADDR +WRITE_READ_ADDR+8) = *(uint32_t*)&packetToDisplay.Data[4];
-				memblockTracer++;
-			}
+			if( xSemaphoreTake( xSemaphoreSdram, 0 ) == pdTRUE )
+        {
+					// insert the firsrt node 
+					if(memblockTracer == 0x00)
+					{
+						*(__IO uint32_t*) (SDRAM_BANK_ADDR + WRITE_READ_ADDR) = 0x00FF|(packetToDisplay.Header.StdId)<<8; // 0x00FF considered as updated flag
+						*(__IO uint32_t*) (SDRAM_BANK_ADDR + WRITE_READ_ADDR+4) = *(uint32_t*)&packetToDisplay.Data[0];
+						*(__IO uint32_t*) (SDRAM_BANK_ADDR +WRITE_READ_ADDR+8) = *(uint32_t*)&packetToDisplay.Data[4];
+						memblockTracer++;
+					}
 			
-			for(uint16_t n = 0; n<memblockTracer ;n++)
-			{
-				// iterate to find other nodes
-				if(packetToDisplay.Header.StdId == *(__IO uint32_t*) (SDRAM_BANK_ADDR + WRITE_READ_ADDR+12*n))
-				{
-					*(__IO uint32_t*) (SDRAM_BANK_ADDR + WRITE_READ_ADDR+4+(12*n)) = *(uint32_t*)&packetToDisplay.Data[0];
-					*(__IO uint32_t*) (SDRAM_BANK_ADDR +WRITE_READ_ADDR+8+(12*n)) = *(uint32_t*)&packetToDisplay.Data[4];
-					break;
+					for(uint16_t n = 0; n<memblockTracer ;n++)
+					{
+						// iterate to find other nodes
+						if((packetToDisplay.Header.StdId<<8) == (0xFF00 &(*(__IO uint32_t*) (SDRAM_BANK_ADDR + WRITE_READ_ADDR+12*n))))
+						{
+							*(__IO uint32_t*) (SDRAM_BANK_ADDR + WRITE_READ_ADDR+(12*n)) = 0x00FF|(packetToDisplay.Header.StdId)<<8;
+							*(__IO uint32_t*) (SDRAM_BANK_ADDR + WRITE_READ_ADDR+4+(12*n)) = *(uint32_t*)&packetToDisplay.Data[0];
+							*(__IO uint32_t*) (SDRAM_BANK_ADDR +WRITE_READ_ADDR+8+(12*n)) = *(uint32_t*)&packetToDisplay.Data[4];
+							break;
+						}
+						
+						// iteration did not found matching id insert at the end 
+						if(n+1 == memblockTracer)
+						{
+						*(__IO uint32_t*) (SDRAM_BANK_ADDR + WRITE_READ_ADDR+(12*n)) = 0x00FF|(packetToDisplay.Header.StdId)<<8;
+						*(__IO uint32_t*) (SDRAM_BANK_ADDR + WRITE_READ_ADDR+4+(12*n)) = *(uint32_t*)&packetToDisplay.Data[0];
+						*(__IO uint32_t*) (SDRAM_BANK_ADDR +WRITE_READ_ADDR+8+(12*n)) = *(uint32_t*)&packetToDisplay.Data[4];
+						memblockTracer++;
+						break;
+						}
+						
+					}
+					xSemaphoreGive( xSemaphoreSdram);
 				}
-				
-			  // iteration did not found matching id insert at the end 
-				if(n+1 == memblockTracer)
-				{
-				*(__IO uint32_t*) (SDRAM_BANK_ADDR + WRITE_READ_ADDR+(12*n)) = packetToDisplay.Header.StdId;
-				*(__IO uint32_t*) (SDRAM_BANK_ADDR + WRITE_READ_ADDR+4+(12*n)) = *(uint32_t*)&packetToDisplay.Data[0];
-				*(__IO uint32_t*) (SDRAM_BANK_ADDR +WRITE_READ_ADDR+8+(12*n)) = *(uint32_t*)&packetToDisplay.Data[4];
-				memblockTracer++;
-				break;
-				}
-				
 			}
-			
-		}
-
 	}
 }
 
