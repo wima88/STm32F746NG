@@ -1,0 +1,28 @@
+--cpu Cortex-M7.fp.sp
+"tmc4361test\startup_stm32f746xx.o"
+"tmc4361test\main.o"
+"tmc4361test\stm32f7xx_it.o"
+"tmc4361test\stm32f7xx_hal_msp.o"
+"tmc4361test\stm32f7xx_hal_cortex.o"
+"tmc4361test\stm32f7xx_hal_spi.o"
+"tmc4361test\stm32f7xx_hal_spi_ex.o"
+"tmc4361test\stm32f7xx_hal_rcc.o"
+"tmc4361test\stm32f7xx_hal_rcc_ex.o"
+"tmc4361test\stm32f7xx_hal_flash.o"
+"tmc4361test\stm32f7xx_hal_flash_ex.o"
+"tmc4361test\stm32f7xx_hal_gpio.o"
+"tmc4361test\stm32f7xx_hal_dma.o"
+"tmc4361test\stm32f7xx_hal_dma_ex.o"
+"tmc4361test\stm32f7xx_hal_pwr.o"
+"tmc4361test\stm32f7xx_hal_pwr_ex.o"
+"tmc4361test\stm32f7xx_hal.o"
+"tmc4361test\stm32f7xx_hal_i2c.o"
+"tmc4361test\stm32f7xx_hal_i2c_ex.o"
+"tmc4361test\stm32f7xx_hal_exti.o"
+"tmc4361test\stm32f7xx_hal_tim.o"
+"tmc4361test\stm32f7xx_hal_tim_ex.o"
+"tmc4361test\system_stm32f7xx.o"
+--library_type=microlib --strict --scatter "TMC4361Test\TMC4361Test.sct"
+--summary_stderr --info summarysizes --map --load_addr_map_info --xref --callgraph --symbols
+--info sizes --info totals --info unused --info veneers
+--list "TMC4361Test.map" -o TMC4361Test\TMC4361Test.axf
