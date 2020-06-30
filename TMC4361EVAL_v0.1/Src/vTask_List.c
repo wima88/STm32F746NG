@@ -19,10 +19,12 @@ extern uint8_t my_buff;
 extern QueueHandle_t xQueue1,xQueue2,xQueue3;
 extern uint8_t welcomeArt;
 extern uint8_t input_format;
+extern uint8_t wTask_buff;
 extern uint8_t wCommand_buff;
 extern SPI_HandleTypeDef hspi5;
 extern	uint8_t wTxData[5];
 extern 	uint8_t wRxData[5];
+extern 	SemaphoreHandle_t xSemaphore;
 
 
 
@@ -57,18 +59,17 @@ void wTask_USB_FS(void *arg)
 
 	for(;;)
 	{
-		if(HAL_GPIO_ReadPin(GPIOI,GPIO_PIN_11) == GPIO_PIN_SET)
+
+	if( xQueueReceive( xQueue1,&wTask_buff,0)  == pdTRUE )
 		{
-			//CDC_Transmit_FS(&welcomeArt,620);
-			vTaskDelay(1);
-			CDC_Transmit_FS(&wCommand_buff,20);
-			
-
-			vTaskDelay(1000);
+			if( xSemaphoreTake( xSemaphore, 0 ) == pdTRUE )
+				{
+					while(CDC_Transmit_FS(&wTask_buff,sizeof wTask_buff)!= USBD_OK){}
+					if( xSemaphoreGive( xSemaphore ) != pdTRUE ){}
+				}
+				
 		}
-					vTaskDelay(5);
-
-
+				
 	}
 }
 

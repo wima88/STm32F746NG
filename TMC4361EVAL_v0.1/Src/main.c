@@ -48,9 +48,8 @@ SPI_HandleTypeDef hspi5;
 
 osThreadId defaultTaskHandle;
 /* USER CODE BEGIN PV */
-	uint8_t my_buff[20];
-	uint8_t wTrml_buff [20];
-	uint8_t wCommand_buff [48] = {">"};
+	uint8_t wTask_buff[48];
+	uint8_t wCommand_buff [48];
 	uint16_t wBufCount = 1;
 	
 	//spi buffer
@@ -62,6 +61,8 @@ osThreadId defaultTaskHandle;
 	TaskHandle_t wTask_LEDxHandle = NULL;
 	TaskHandle_t wTask_USB_FSxHandle = NULL;
 	TaskHandle_t wTask_MotorCtrHandle = NULL;
+	SemaphoreHandle_t xSemaphore;
+
 	
 
 
@@ -129,6 +130,13 @@ int main(void)
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */
   /* add semaphores, ... */
+	   xSemaphore = xSemaphoreCreateMutex();
+
+   if( xSemaphore == NULL )
+   {
+     		while(1)  // do not proceed
+		{}
+   }
   /* USER CODE END RTOS_SEMAPHORES */
 
   /* USER CODE BEGIN RTOS_TIMERS */
@@ -138,7 +146,7 @@ int main(void)
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
 	
-	xQueue1 = xQueueCreate( 10, sizeof( wTrml_buff) );
+	xQueue1 = xQueueCreate( 10, sizeof( wTask_buff) );
 	
 	if(xQueue1 == NULL)
 	{
@@ -338,22 +346,16 @@ static void MX_GPIO_Init(void)
 
 void  CDC_ReceiveCallBack(uint8_t* Buf, uint32_t Len)
 {
-	
 	if(*Buf == 0x0D)
 	{
-		CDC_Transmit_FS((uint8_t *) "\r\n",4);
-		HAL_Delay(20);
-		wBufCount =1;
-		
-		//clear the buffer
-		memset(&wCommand_buff[3], 0, sizeof wCommand_buff);
+		if( xSemaphoreTakeFromISR( xSemaphore,NULL) == pdTRUE )
+				{
+					while(CDC_Transmit_FS((uint8_t *) "\r\n>",4)!= USBD_OK){}
+					if( xSemaphoreGiveFromISR( xSemaphore,NULL) != pdTRUE ){}
+				}
 	}
-	else
-	{
-	wCommand_buff[wBufCount] = *Buf;
-	CDC_Transmit_FS(Buf,Len);
-	wBufCount++;
-	}
+		xQueueSendFromISR(xQueue1,Buf,NULL);
+
 }
 
 /* USER CODE END 4 */
