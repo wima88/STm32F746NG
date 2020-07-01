@@ -26,5 +26,6 @@ extern "C" {
 void wTask_LED(void * arguments); // Test task for rtos 
 void wTask_USB_FS(void * arguments); // usb vertual com 
 void wTask_MotorCtr(void *arguments); // motor control task
+void wTask_CmdHandle(void * arguments); // usb vertual com 
 
 #endif

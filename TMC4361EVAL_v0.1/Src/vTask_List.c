@@ -15,16 +15,18 @@
 	
 #include "vTask_List.h"
 
-extern uint8_t my_buff;
 extern QueueHandle_t xQueue1,xQueue2,xQueue3;
-extern uint8_t welcomeArt;
-extern uint8_t input_format;
+extern 	SemaphoreHandle_t xSemaphore;
+
 extern uint8_t wTask_buff;
-extern uint8_t wCommand_buff;
+extern uint8_t wCommand_Task_buff;
+
 extern SPI_HandleTypeDef hspi5;
 extern	uint8_t wTxData[5];
 extern 	uint8_t wRxData[5];
-extern 	SemaphoreHandle_t xSemaphore;
+
+extern char wCnvt[48];
+
 
 
 
@@ -49,7 +51,7 @@ void wTask_LED(void *arg)
 
 
 /**
-  *@brief  Function controling Vertual com port data in/out
+  *@brief  Function to send data to vcp (shows what types using key board)
   *@param  argument: not in use
   *@retval None
 	*@depend rtos depends and USB_mid ware 
@@ -64,6 +66,7 @@ void wTask_USB_FS(void *arg)
 		{
 			if( xSemaphoreTake( xSemaphore, 0 ) == pdTRUE )
 				{
+					
 					while(CDC_Transmit_FS(&wTask_buff,sizeof wTask_buff)!= USBD_OK){}
 					if( xSemaphoreGive( xSemaphore ) != pdTRUE ){}
 				}
@@ -94,3 +97,31 @@ void wTask_MotorCtr(void *arguments)
 }
 
 
+/**
+  *@brief  Function handles the commands reciew from the teminal via com port 
+  *@param  argument: not in use
+  *@retval None
+	*@depend None
+*/
+void wTask_CmdHandle(void * arguments) 
+{
+	for(;;)
+	{
+
+	if( xQueueReceive( xQueue2,&wCnvt,0)  == pdTRUE )
+		{
+			if(strcmp(wCnvt,"wima\r") == 0)
+			{
+				if( xSemaphoreTake( xSemaphore, 0 ) == pdTRUE )
+				{
+					while(CDC_Transmit_FS((uint8_t *)"processing \r\n ",15)!= USBD_OK){}
+					if( xSemaphoreGive( xSemaphore ) != pdTRUE ){}
+				}
+			}
+			
+				
+		}
+				
+	}
+	
+}

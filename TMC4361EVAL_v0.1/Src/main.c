@@ -50,7 +50,9 @@ osThreadId defaultTaskHandle;
 /* USER CODE BEGIN PV */
 	uint8_t wTask_buff[48];
 	uint8_t wCommand_buff [48];
-	uint16_t wBufCount = 1;
+	uint8_t wCommand_Task_buff [48];
+	uint16_t wBufCount = 0;
+  char wCnvt[48];
 	
 	//spi buffer
 	uint8_t wTxData[5];
@@ -61,6 +63,7 @@ osThreadId defaultTaskHandle;
 	TaskHandle_t wTask_LEDxHandle = NULL;
 	TaskHandle_t wTask_USB_FSxHandle = NULL;
 	TaskHandle_t wTask_MotorCtrHandle = NULL;
+	TaskHandle_t wTask_CmdHandle_ = NULL;
 	SemaphoreHandle_t xSemaphore;
 
 	
@@ -154,6 +157,13 @@ int main(void)
 		{}
 	}
 	
+		xQueue2 = xQueueCreate( 10, sizeof( wTask_buff) );
+	
+	if(xQueue1 == NULL)
+	{
+		while(1)  // do not proceed
+		{}
+	}
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
@@ -163,9 +173,10 @@ int main(void)
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
-	xTaskCreate(wTask_LED,"Task_LED" ,256 , NULL,osPriorityAboveNormal,&wTask_LEDxHandle);
-	xTaskCreate(wTask_USB_FS,"Task_Vcom",256,NULL,osPriorityAboveNormal,&wTask_USB_FSxHandle);
+	xTaskCreate(wTask_LED,"Task_LED" ,128 , NULL,osPriorityLow,&wTask_LEDxHandle);
+	xTaskCreate(wTask_USB_FS,"Task_Vcom",128,NULL,osPriorityAboveNormal,&wTask_USB_FSxHandle);
 	xTaskCreate(wTask_MotorCtr,"Task_MotorCrl",256,NULL,osPriorityAboveNormal,&wTask_MotorCtrHandle);
+	xTaskCreate(wTask_CmdHandle,"Task_CmdHandler",256,NULL,osPriorityAboveNormal,&wTask_CmdHandle_);
   /* USER CODE END RTOS_THREADS */
 
   /* Start scheduler */
@@ -350,9 +361,25 @@ void  CDC_ReceiveCallBack(uint8_t* Buf, uint32_t Len)
 	{
 		if( xSemaphoreTakeFromISR( xSemaphore,NULL) == pdTRUE )
 				{
-					while(CDC_Transmit_FS((uint8_t *) "\r\n>",4)!= USBD_OK){}
+					while(CDC_Transmit_FS((uint8_t *) "\r\n>",3)!= USBD_OK){}
+						
+					memset(&wCommand_buff[wBufCount],0x0D,1);
+					xQueueSendFromISR(xQueue2,wCommand_buff,NULL);
+					wBufCount = 0;
+					memset(wCommand_buff,0, 48);
+					
 					if( xSemaphoreGiveFromISR( xSemaphore,NULL) != pdTRUE ){}
 				}
+	}
+	else if(*Buf == 0x7F)
+	{
+		wCommand_buff[wBufCount] = 0x00;
+		wBufCount--;
+	}
+	else
+	{
+	wCommand_buff[wBufCount]=*Buf;
+	wBufCount++;
 	}
 		xQueueSendFromISR(xQueue1,Buf,NULL);
 
