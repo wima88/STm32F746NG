@@ -88,11 +88,11 @@ void wTask_MotorCtr(void *arguments)
 {
 	for(;;)
 	{
-		GPIOF->ODR &= ~(1UL << 6);
-			HAL_SPI_Transmit(&hspi5,(uint8_t *)wTxData,5,5000);
-			HAL_SPI_Receive(&hspi5,(uint8_t *)wRxData,5,1000);
-		GPIOF->ODR |= 1UL << 6; 
-		vTaskDelay(2000);
+//		GPIOF->ODR &= ~(1UL << 6);
+//			HAL_SPI_Transmit(&hspi5,(uint8_t *)wTxData,5,5000);
+//			HAL_SPI_Receive(&hspi5,(uint8_t *)wRxData,5,1000);
+//		GPIOF->ODR |= 1UL << 6; 
+//		vTaskDelay(2000);
 	}
 }
 
@@ -105,20 +105,73 @@ void wTask_MotorCtr(void *arguments)
 */
 void wTask_CmdHandle(void * arguments) 
 {
+	char *rw_flag ;
+	char *adress ;
+	char *data ;
+	char printBuff[48] = {0};
+	char *datastream = malloc(2*sizeof(char));
+
 	for(;;)
 	{
 
 	if( xQueueReceive( xQueue2,&wCnvt,0)  == pdTRUE )
 		{
-			if(strcmp(wCnvt,"wima\r") == 0)
-			{
-				if( xSemaphoreTake( xSemaphore, 0 ) == pdTRUE )
-				{
-					while(CDC_Transmit_FS((uint8_t *)"processing \r\n ",15)!= USBD_OK){}
-					if( xSemaphoreGive( xSemaphore ) != pdTRUE ){}
-				}
-			}
 			
+			memset(printBuff,0,sizeof printBuff);
+			// if buffer is just "\r" do not process it 
+			if(strcmp(wCnvt,"\r") != 0 && strcmp(wCnvt,"d\r") != 0) 
+			{
+							rw_flag = strtok(wCnvt," ");
+							if( rw_flag  == NULL)
+							{
+								if( xSemaphoreTake( xSemaphore, 0 ) == pdTRUE )
+										{
+											while(CDC_Transmit_FS((uint8_t *)"Error in user Input \r\n", 24)!= USBD_OK){}
+											if( xSemaphoreGive( xSemaphore ) != pdTRUE ){}
+										}
+							}
+							else
+							{
+									adress 	=  strtok(NULL," ");
+								if(adress == NULL)
+								{
+									while(CDC_Transmit_FS((uint8_t *)"Error in user Input \r\n", 24)!= USBD_OK){}
+									if( xSemaphoreGive( xSemaphore ) != pdTRUE ){}
+																		
+								}
+								else
+								{
+									data=  strtok(NULL," ");
+									if(data == NULL)
+									{
+										while(CDC_Transmit_FS((uint8_t *)"Error in user Input \r\n", 24)!= USBD_OK){}
+										if( xSemaphoreGive( xSemaphore ) != pdTRUE ){}
+									}
+									else
+									{
+										
+										sprintf(printBuff , "rw_flag = %s \r\nadress = %s \r\n data= %s \r\n",rw_flag,adress,data);
+										if( xSemaphoreTake( xSemaphore, 0 ) == pdTRUE )
+											{
+												while(CDC_Transmit_FS((uint8_t *)printBuff,sizeof printBuff)!= USBD_OK){}
+												if( xSemaphoreGive( xSemaphore ) != pdTRUE ){}
+											}
+											
+											wTxData[0] = strtol(adress , NULL , 16);
+											
+											for(int i = 0 ; i<4; i++)
+											{
+												memcpy(datastream,data+(i*2),2*sizeof (char));
+												wTxData[i+1] = strtol(datastream, NULL ,16);
+												/* send TxData via a queu to mtrTask*/
+											}											
+											
+									}
+								}
+							}
+				
+			}
+				
 				
 		}
 				

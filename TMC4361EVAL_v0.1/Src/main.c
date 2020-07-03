@@ -361,7 +361,7 @@ void  CDC_ReceiveCallBack(uint8_t* Buf, uint32_t Len)
 	{
 		if( xSemaphoreTakeFromISR( xSemaphore,NULL) == pdTRUE )
 				{
-					while(CDC_Transmit_FS((uint8_t *) "\r\n>",3)!= USBD_OK){}
+					while(CDC_Transmit_FS((uint8_t *) "\r\n",2)!= USBD_OK){}
 						
 					memset(&wCommand_buff[wBufCount],0x0D,1);
 					xQueueSendFromISR(xQueue2,wCommand_buff,NULL);
